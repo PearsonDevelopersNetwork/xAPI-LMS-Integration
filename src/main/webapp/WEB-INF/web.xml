@@ -1,0 +1,72 @@
+<!DOCTYPE web-app PUBLIC
+ "-//Sun Microsystems, Inc.//DTD Web Application 2.3//EN"
+ "http://java.sun.com/dtd/web-app_2_3.dtd" >
+
+<web-app>
+	<display-name>xAPI LMS Integration</display-name>
+
+	<!-- ensures only xAPI request are sent to the proxy -->
+	<filter>
+		<filter-name>XapiEndpointFilter</filter-name>
+		<filter-class>com.pearson.developer.xapi.proxy.EndpointFilter</filter-class>
+	</filter>
+	<!-- authenticates inbound request and prepares outbound authentication -->
+	<filter>
+		<filter-name>XapiAuthFilter</filter-name>
+		<filter-class>com.pearson.developer.xapi.proxy.AuthFilter</filter-class>
+		<init-param>
+			<param-name>targetBasicAuth</param-name>
+			<param-value>Basic {lrs-basic-auth}</param-value>
+		</init-param>
+	</filter>
+	
+	<!--  applies endpoint filter to proxy -->
+	<filter-mapping>
+		<filter-name>XapiEndpointFilter</filter-name>
+		<servlet-name>XapiProxyServlet</servlet-name>
+	</filter-mapping>
+	<!-- applies auth filter to proxy -->
+	<filter-mapping>
+		<filter-name>XapiAuthFilter</filter-name>
+		<servlet-name>XapiProxyServlet</servlet-name>
+	</filter-mapping>
+
+	<!-- proxy servlet for LRS -->
+	<servlet>
+		<servlet-name>XapiProxyServlet</servlet-name>
+		<servlet-class>org.mitre.dsmiley.httpproxy.ProxyServlet</servlet-class>
+		<init-param>
+			<param-name>targetUri</param-name>
+			<param-value>{lrs-endpoint}</param-value>
+		</init-param>
+		<init-param>
+			<param-name>log</param-name>
+			<param-value>false</param-value>
+		</init-param>
+	</servlet>
+	<!-- sso servlet for LTI -->
+	<servlet>
+		<servlet-name>SSOServlet</servlet-name>
+		<servlet-class>com.pearson.developer.xapi.proxy.SSOServlet</servlet-class>
+		<init-param>
+			<param-name>ltiConsumerKey</param-name>
+			<param-value>{lti-consumer-key}</param-value>
+		</init-param>
+		<init-param>
+			<param-name>ltiSharedSecret</param-name>
+			<param-value>{lti-shared-secret}</param-value>
+		</init-param>
+	</servlet>
+	
+	<!-- all request to /xapi/* are relayed to LRS -->
+	<servlet-mapping>
+		<servlet-name>XapiProxyServlet</servlet-name>
+		<url-pattern>/xapi/*</url-pattern>
+	</servlet-mapping>
+	<!-- LTI uses /sso path -->
+	<servlet-mapping>
+		<servlet-name>SSOServlet</servlet-name>
+		<url-pattern>/sso</url-pattern>
+	</servlet-mapping>
+
+</web-app>
